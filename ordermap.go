@@ -5,23 +5,24 @@ import (
 	"sync"
 )
 
-type OrderMap struct {
-	sync.RWMutex
-	Map  map[interface{}]interface{}
-	List list.List
-	len  int32
-}
-
 type Pair struct {
   Key interface{}
   Value interface{}
 }
 
-func (om *OrderMap) Put(p *Pair) {
-	//
+type OrderMap struct {
+	sync.RWMutex
+	Map  map[interface{}]*Pair
+	List list.List
+	len  int32
+  Compare func(a *Pair, b *Pair) bool
 }
 
-func (om *OrderMap) PutByIndex(index int32, p *Pair) {
+// type Compare interface{
+//   Compare() bool
+// }
+
+func (om *OrderMap) Put(p *Pair) {
 	//
 }
 
