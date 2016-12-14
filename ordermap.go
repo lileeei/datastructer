@@ -22,20 +22,49 @@ type OrderMap struct {
 //   Compare() bool
 // }
 
+//Put ...
 func (om *OrderMap) Put(p *Pair) {
-	//
+	om.Lock()
+  defer om.Unlock()
+
+  if om.List == nil {
+    om.List = list.New()
+  }
+
+  for e := om.List.Front(); e != nil; e = e.Next() {
+    if !om.Compare(p, e) {
+      om.List.InsertBefore(p, e)
+    }
+  }
 }
 
+//Get ...
 func (om *OrderMap) Get(key interface{}) interface{} {
-	//
+	om.RLock()
+  defer om.RUnlock()
+
+  if v, ok := om.Map[key]; ok {
+
+    return v.Value
+  }
+
+  return nil
 }
 
+//GetFirst ...
 func (om *OrderMap) GetFirst() *Pair {
-	//
+  om.RLock()
+  defer om.RUnlock()
+
+  return om.List.Front()
 }
 
+//GetLast ...
 func (om *OrderMap) GetLast() *Pair {
-	//
+  om.RLock()
+  defer om.RUnlock()
+
+  return om.List.Back()
 }
 
 func (om *OrderMap) GetByIndex(index int) *Pair {
@@ -50,8 +79,12 @@ func (om *OrderMap) Delete(key interface{}) {
 	//todo
 }
 
+//返回ordermap当前元素的数量
 func (om *OrderMap) Len() int32 {
-	//todo
+	om.RLock()
+  	defer om.RUnlock()
+
+	return om.len
 }
 
 func (om *OrderMap) Traversal() []*Pair {
