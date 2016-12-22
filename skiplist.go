@@ -196,22 +196,22 @@ func (skiplist *SkipList) SearchInsertNodeBack(standernode *SkipListNode) *SkipL
 }
 
 func (skiplist *SkipList) compare(standernode, node *SkipListNode, currentlevel uint) *SkipListNode {
-	forwardnode := node.level[currentlevel].levelForward
-	if node == skiplist.head {
-		if forwardnode == nil {
-
+	currentlevel := len(skiplist.head)
+	currentnode := skiplist.head
+	for currentlevel >= 0 {
+		forwardnode := currentnode.level[currentlevel].levelForward
+		for forwardnode != nil && skiplist.Compare(standernode, forwardnode) {
+			currentnode = forwardnode
+			forwardnode = forwardnode.level[currentlevel].levelForward
+			if forwardnode != nil && !skiplist.Compare(standernode, forwardnode) {
+				currentlevel--
+				break
+			}
 		}
-		skiplist.compare(standernode, node, currentlevel-1)
+		currentlevel--
 	}
-
-	if forwardnode == nil && skiplist.Compare(standernode, node) {
-
-		return node
-	}
-
-	if !(skiplist.Compare(standernode, node) && skiplist.Compare(standernode, forwardnode)) {
-		node := compare(standernode, node, currentlevel-1)
-	}
+	
+	return currentnode
 }
 
 //Traversal ..
