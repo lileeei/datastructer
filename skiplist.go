@@ -1,12 +1,13 @@
 package skiplist
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
 
 const (
-	SKIPLIST_MAXLEVEL = 32
+	SKIPLIST_MAXLEVEL = 16
 	SKIPLIST_P        = 0.25
 )
 
@@ -44,8 +45,7 @@ func CreateSkipList(level uint, comparefunc CompareFunc) *SkipList {
 		level = SKIPLIST_MAXLEVEL
 	}
 
-	head := createSkipListNode(nil, nil, level)
-	head.Forward = nil
+	head := createSkipListNode(nil, nil, SKIPLIST_MAXLEVEL)
 	for _, e := range head.level {
 		e.levelBack = nil
 		e.levelForward = nil
@@ -81,7 +81,7 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 	if skiplist.tail == nil {
 		skiplist.tail = insertnode
 
-		for i, e := range insertnode.level {
+		for i, _ := range insertnode.level {
 			skiplist.head.level[i].levelForward = insertnode
 			insertnode.level[i].levelBack = skiplist.head
 			insertnode.level[i].span = 0
@@ -90,26 +90,19 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 		return
 	}
 
-	node := skiplist.SearchFirstGreater(insertnode)
-	if node == nil { //insertnode should be apended to tail
-		for i, e := range skiplist.tail.level {
+	node := skiplist.SearchInsertNodeBack(insertnode)
+	for i, e := range node.level {
+		insertnode.level[i].levelBack = node
+		if e.levelForward != nil {
+			insertnode.level[i].levelForward = e.levelForward
+			insertnode.level[i].span = 1
+			e.levelForward.level[i].span -= 1
 			e.levelForward = insertnode
-			insertnode.level[i].levelBack = skiplist.tail
-		}
-
-		skiplist.tail = node
-	} else {
-		for i, e := range node.level {
-			e.levelBack.level[i].levelForward = insertnode
-			insertnode.level[i].levelBack = node.level[i].levelForward
-
-			insertnode.level[i].levelForward = node
-			e.levelBack = insertnode
 		}
 	}
 
 	leninsertnodelevel := len(insertnode.level)
-	currentlevel := len(insertnode.level[0].levelBack)
+	currentlevel := len(insertnode.level[0].levelBack.level)
 
 	if leninsertnodelevel <= currentlevel {
 
@@ -161,7 +154,7 @@ func (skiplist *SkipList) DelNode(node *SkipListNode) bool {
 }
 
 //UpdateNode ...
-func (skiplist *SkipListNode) UpdateNode(node *SkipListNode) bool {
+func (skiplist *SkipList) UpdateNode(node *SkipListNode) bool {
 	if node == nil {
 		fmt.Println("UpdateNode node is nill!!!")
 
@@ -180,32 +173,50 @@ func (skiplist *SkipListNode) UpdateNode(node *SkipListNode) bool {
 }
 
 //SearchFirstGreater ...
-func (skiplist *SkipList) SearchFirstGreater(standernode *SkipListNode) *SkipListNode {
-	if skiplist.tail == nil || standernode == nil {
-
-		return nil
+func (skiplist *SkipList) SearchInsertNodeBack(standernode *SkipListNode) *SkipListNode {
+	if standernode == nil {
+		panic("SearchFirstGreater standernode is nil!!!!")
 	}
 
-	var node *SkipListNode = nil
-
 	lenlevel := len(standernode.level)
-	if skiplist.head.level[lenlevel] == nil {
+	fmt.Printf("SearchInsertNodeBack\nstandernode.level: %v\nstandernode.key: %v\n", len(standernode.level), standernode.Key)
 
+	if skiplist.tail == nil {
+		fmt.Println("true")
 		return skiplist.head
 	}
 
-	backnode := skiplist.head.level[lenlevel].levelForward
+	forwardnode := skiplist.head.level[lenlevel].levelForward
 
-	for backnode != nil && skiplist.Compare(standernode, backnode) {
-		backnode = backnode.levelForward
+	for forwardnode != nil && skiplist.Compare(standernode, forwardnode) {
+		forwardnode = forwardnode.level[lenlevel].levelForward
 	}
 
-	return backnode.level[lenlevel].levelBack
+	return forwardnode.level[lenlevel].levelBack
+}
+
+func (skiplist *SkipList) compare(standernode, node *SkipListNode, currentlevel uint) *SkipListNode {
+	forwardnode := node.level[currentlevel].levelForward
+	if node == skiplist.head {
+		if forwardnode == nil {
+
+		}
+		skiplist.compare(standernode, node, currentlevel-1)
+	}
+
+	if forwardnode == nil && skiplist.Compare(standernode, node) {
+
+		return node
+	}
+
+	if !(skiplist.Compare(standernode, node) && skiplist.Compare(standernode, forwardnode)) {
+		node := compare(standernode, node, currentlevel-1)
+	}
 }
 
 //Traversal ..
 func (skiplist *SkipList) Traversal() {
-	if skiplist.head.level[0] == nil {
+	if skiplist.head.level[0].levelForward == nil {
 		fmt.Println("the skiplist is nil!")
 
 		return
@@ -235,7 +246,7 @@ func createSkipListNode(key interface{}, data interface{}, level uint) *SkipList
 	for _, e := range node.level {
 		e.levelBack = nil
 		e.levelForward = nil
-		e.span = nil
+		e.span = 0
 	}
 
 	return node
@@ -244,9 +255,9 @@ func createSkipListNode(key interface{}, data interface{}, level uint) *SkipList
 //-----------------------------common function
 //randLevel ...
 func randLevel() uint {
-	var level = 1
+	var level uint = 1
 	rand.Seed(time.Now().Unix())
-	for (rand.Int() & 0xffff) < (SKIPLIST_P * 0xffff) {
+	for (rand.Int() & SKIPLIST_MAXLEVEL) < int(SKIPLIST_MAXLEVEL*SKIPLIST_P) {
 		level++
 	}
 
