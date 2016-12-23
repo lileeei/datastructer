@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	SKIPLIST_MAXLEVEL = 20
+	SKIPLIST_MAXLEVEL = 32
 	SKIPLIST_P        = 0.25
 )
 
@@ -118,14 +118,20 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 		}
 	}
 
-	currentlevel := len(insertnode.level[0].levelBack.level)
-
-	if leninsertnodelevel <= currentlevel {
+	if leninsertnodelevel <= len(insertnode.level[0].levelBack.level) {
 
 		return
 	}
 
+	skiplist.fixInsert(insertnode)
+
+}
+
+func (skiplist *SkipList) fixInsert(insertnode *SkipListNode) {
 	var span uint = 0
+	currentlevel := len(insertnode.level[0].levelBack.level)
+	leninsertnodelevel := len(insertnode.level)
+
 	backnode := insertnode.level[0].levelBack
 	for backnode != nil {
 		span++
@@ -155,7 +161,6 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 		}
 
 	}
-
 }
 
 //DelNode ...
@@ -293,16 +298,19 @@ func createSkipListNode(key interface{}, data interface{}, level uint) *SkipList
 func randLevel() uint {
 	var level uint = 1
 	rand.Seed(time.Now().UnixNano())
-	// for (rand.Int() & SKIPLIST_MAXLEVEL) < int(SKIPLIST_MAXLEVEL*SKIPLIST_P) {
-	// 	level++
-	// }
-	for rand.Int()%2 != 0 {
+	jugeline := SKIPLIST_MAXLEVEL * SKIPLIST_P
+	for (rand.Int() & SKIPLIST_MAXLEVEL) < int(jugeline) {
 		level++
 	}
+	// for (level < SKIPLIST_MAXLEVEL) && (rand.Int()%4 == 0) {
+	// 	level++
+	// }
 	if level < SKIPLIST_MAXLEVEL {
 
 		return level
 	}
 
 	return (level & SKIPLIST_MAXLEVEL)
+
+	// return level
 }
