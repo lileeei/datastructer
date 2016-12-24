@@ -23,7 +23,24 @@ type OrderMap struct {
 // }
 
 //Put ...
-func (om *OrderMap) Put(p *Pair) {
+func (om *orderMap) Put(key interface{}, value inteface{}) {
+		om.Lock()
+  defer om.Unlock()
+
+  if om.List == nil {
+    om.List = list.New()
+  }
+
+  for e := om.List.Front(); e != nil; e = e.Next() {
+    if !om.Compare(p, e) {
+      om.List.InsertBefore(p, e)
+    }
+  }
+
+}
+
+//PutPair ...
+func (om *OrderMap) PutPair(p *Pair) {
 	om.Lock()
   defer om.Unlock()
 
