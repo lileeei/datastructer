@@ -108,7 +108,7 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 			// fmt.Println("enter if")
 			insertnode.level[i].levelForward = node.level[i].levelForward
 			insertnode.level[i].span = 1
-			node.level[i].levelForward.level[i].span -= 1
+			// node.level[i].levelForward.level[i].span += 1
 			node.level[i].levelForward = insertnode
 		} else {
 			// fmt.Println("enter else")
@@ -135,6 +135,10 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 // 		//fmt.Printf("currentlevel: %d\n", currentlevel)
 // 		//fmt.Printf("currentnode.level[%d]: %#v\n", currentlevel, currentnode.level[currentlevel])
 // 		forwardnode := currentnode.level[currentlevel].levelForward
+// 		if forwardnode == nil && currentlevel <= len(standernode) {
+// 			currentnode.level[currentlevel].levelForward = standernode.level[currentlevel].levelBack
+// 			standernode.level[currentlevel].levelForward = nil
+// 		}
 // 		for forwardnode != nil && skiplist.Compare(standernode, forwardnode) {
 // 			currentnode = forwardnode
 // 			forwardnode = forwardnode.level[currentlevel].levelForward
@@ -144,9 +148,6 @@ func (skiplist *SkipList) InsertNode(insertnode *SkipListNode) {
 // 			}
 // 		}
 
-// 		if forwardnode != nil {
-			
-// 		}
 // 		currentlevel--
 // 	}
 
@@ -256,7 +257,7 @@ func (skiplist *SkipList) SearchNodeBack(standernode *SkipListNode) *SkipListNod
 }
 
 func (skiplist *SkipList) compare(standernode *SkipListNode) *SkipListNode {
-	currentlevel := len(skiplist.head.level) - 1
+	currentlevel := len(standernode.level) - 1
 	currentnode := skiplist.head
 	for currentlevel >= 0 {
 		//fmt.Printf("currentnode: %#v\n", currentnode)
