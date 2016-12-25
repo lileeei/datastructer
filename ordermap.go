@@ -1,7 +1,7 @@
 package ordermap
 
 import (
-	"container/list"
+  "ordermap/skiplist"
 	"sync"
 )
 
@@ -12,57 +12,55 @@ type Pair struct {
 
 type OrderMap struct {
 	sync.RWMutex
-	Map  map[interface{}]*Pair
-	List list.List
+	Map  map[interface{}]interface{}
+	List *skiplist.SkipList
 	len  int32
-  Compare func(a *Pair, b *Pair) bool
+  Compare skiplist.CompareFunc
 }
 
-// type Compare interface{
-//   Compare() bool
-// }
+//CreateOrdeMap ...
+func CreateOrdeMap(compare Compare) *OrderMap {
+  om := new(OrderMap)
+  om.Compare = compare
+  om.Map := make(map[interface{}]interface{})
+  om.List := skiplist.CreateSkipList(skiplist.SKIPLIST_MAXLEVEL, compare)
+  om.len = 0
+}
 
 //Put ...
 func (om *orderMap) Put(key interface{}, value inteface{}) {
-		om.Lock()
-  defer om.Unlock()
+  if _, ok := om.Map[key]; ok {
+    fmt.Printf("the key %v has been existed!!\n", key)
 
-  if om.List == nil {
-    om.List = list.New()
+    return
   }
 
-  for e := om.List.Front(); e != nil; e = e.Next() {
-    if !om.Compare(p, e) {
-      om.List.InsertBefore(p, e)
-    }
-  }
-
+  putPair := &Pair{Key: key, Value: value}
+  om.putPair(putPair)
 }
 
 //PutPair ...
-func (om *OrderMap) PutPair(p *Pair) {
+func (om *OrderMap) putPair(p *Pair) {
 	om.Lock()
   defer om.Unlock()
-
   if om.List == nil {
-    om.List = list.New()
+    panic("List is nil!!!!")
   }
-
-  for e := om.List.Front(); e != nil; e = e.Next() {
-    if !om.Compare(p, e) {
-      om.List.InsertBefore(p, e)
-    }
-  }
+  node := skiplist.CreateSkipListNode(p.Key, p.Value)
+  List.InsertNode(node)
+  List.Map[Key] = node
+  om.len++
 }
 
 //Get ...
-func (om *OrderMap) Get(key interface{}) interface{} {
+func (om *OrderMap) GetValueByKey(key interface{}) interface{} {
 	om.RLock()
   defer om.RUnlock()
 
-  if v, ok := om.Map[key]; ok {
-
-    return v.Value
+  value, isexist := om.Map[key]
+  if isexist != nil {
+    
+    return value
   }
 
   return nil
@@ -73,7 +71,17 @@ func (om *OrderMap) GetFirst() *Pair {
   om.RLock()
   defer om.RUnlock()
 
-  return om.List.Front()
+  head := om.List.GetHead()
+  if head != nil {
+    level0 := head.GetNLevel(0)
+    if level0 != nil {
+      node := level0.GetForward()
+
+      return &Pair{Key: node.Key, Value: node.Data}
+    }
+  }
+
+  return nil
 }
 
 //GetLast ...
@@ -81,7 +89,13 @@ func (om *OrderMap) GetLast() *Pair {
   om.RLock()
   defer om.RUnlock()
 
-  return om.List.Back()
+  tail := om.List.GetTail()
+  if tail != nil {
+  
+    return &Pair{Key: tail.Key, Value: tail.Data}
+  }
+
+  return nil
 }
 
 func (om *OrderMap) GetByIndex(index int) *Pair {
